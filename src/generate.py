@@ -11,7 +11,7 @@ import re
 CHROMA_DB_PATH = "chroma_db"
 COLLECTION_NAME = "chekhov_texts"
 MODEL_NAME = "intfloat/multilingual-e5-small"
-LLM_MODEL = "qwen3.5:4b"
+LLM_MODEL = "qwen2.5:7b"
 
 def find_context(query: str):
     """Ищет текст в базе (векторный поиск + точный поиск по JSON)"""
@@ -72,7 +72,7 @@ def ask_llm(query: str):
 ВОПРОС: {query}
 ОТВЕТ:"""
 
-    print("  [3/4] Отправка запроса в Ollama (модель qwen3.5:4b)...")
+    print("  [3/4] Отправка запроса в Ollama (модель qwen2.5:7b)...")
     print("        ⏳ Пожалуйста, подождите. Генерация ответа...")
     
     try:
