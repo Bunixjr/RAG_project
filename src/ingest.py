@@ -2,14 +2,13 @@ import os
 import re
 from dataclasses import dataclass, asdict
 
-DATA_DIR = "data"
+DATA_DIR = "data" # Где лежат тексты 
 
 MAPPING = {
     "chekhov_chaika": ("Чайка", "А. П. Чехов"),
     "chekhov_tri_sestry": ("Три сестры", "А. П. Чехов"),
     "chekhov_palata_6": ("Палата №6", "А. П. Чехов"),
     "chekhov_vishnevyy_sad": ("Вишнёвый сад", "А. П. Чехов"),
-    "chekhov_rasskazy": ("Сборник рассказов", "А. П. Чехов"),
 }
 
 @dataclass
@@ -21,8 +20,8 @@ class Chunk:
     paragraph_start: int
 
 def split_into_paragraphs(text: str) -> list[str]:
-    text = text.replace("\r\n", "\n")
-    paragraphs = re.split(r"\n\s*\n", text)
+    text = text.replace("\r\n", "\n") # Windows и linux
+    paragraphs = re.split(r"\n\s*\n", text) # Реж там где пробелы
     return [p.strip() for p in paragraphs if p.strip()]
 
 def make_chunks(paragraphs: list[str], max_chars: int = 1500) -> list[tuple[str, int]]:
@@ -31,9 +30,7 @@ def make_chunks(paragraphs: list[str], max_chars: int = 1500) -> list[tuple[str,
     current_length = 0
 
     for i, para in enumerate(paragraphs):
-        # Если абзац сам по себе больше лимита (например, огромный монолог), режем его
         if len(para) > max_chars:
-            # Сначала сохраним то, что накопили
             if current_chunk:
                 chunks.append(("\n\n".join(current_chunk), i - len(current_chunk)))
                 current_chunk = []
@@ -44,7 +41,7 @@ def make_chunks(paragraphs: list[str], max_chars: int = 1500) -> list[tuple[str,
                 chunks.append((para[j:j+max_chars], i))
             continue
 
-        # Если абзац короткий (реплика "Пауза"), добавляем к текущему
+        # Если абзац короткий, добавляем к текущему
         current_chunk.append(para)
         current_length += len(para) + 2 # +2 за перенос строки
 
@@ -76,14 +73,13 @@ def parse_file(path: str) -> list[Chunk]:
     work, author = filename_to_meta(filename)
     
     # Чистим текст от одиночных ремарок
-    import re
     raw = re.sub(r'\n+(Пауза\.|Входит\.|Уходит\.|Смеется\.|Плачет\.)\n+', '\n\n', raw)
     
     paragraphs = split_into_paragraphs(raw)
     
     # Отсеиваем абзацы короче 30 символов
     paragraphs = [p for p in paragraphs if len(p) > 30]
-    
+    # Запуск чанкинга
     chunks = []
     for idx, (chunk_text, para_start) in enumerate(make_chunks(paragraphs)):
         chunks.append(Chunk(

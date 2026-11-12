@@ -19,7 +19,7 @@ def build_database():
     print(f"Загружено чанков: {len(chunks)}")
 
     print("2. Инициализация модели эмбеддингов...")
-    model = SentenceTransformer(MODEL_NAME)
+    model = SentenceTransformer(MODEL_NAME) 
 
     print("3. Подключение к ChromaDB...")
     client = chromadb.PersistentClient(path=CHROMA_DB_PATH)
@@ -34,12 +34,12 @@ def build_database():
 
     print("4. Генерация эмбеддингов и запись в базу...")
     
-    batch_size = 32
+    batch_size = 32 # чанков за раз нейросети
     for i in range(0, len(chunks), batch_size):
         batch = chunks[i:i + batch_size]
         texts = [c.text for c in batch]
         
-        # Для моделей e5 нужен префикс "passage: "
+        # passage - это для базы, query - это вопрос, это нужно для моделей е5
         embeddings = model.encode([f"passage: {t}" for t in texts]).tolist()
         
         metadatas = [
@@ -50,23 +50,25 @@ def build_database():
                 "paragraph_start": c.paragraph_start
             } for c in batch
         ]
-        ids = [c.chunk_id for c in batch]
+        ids = [c.chunk_id for c in batch] 
 
         collection.add(
             embeddings=embeddings,
             documents=texts,
             metadatas=metadatas,
-            ids=ids
+            ids=ids 
         )
         print(f"  Обработано {min(i + batch_size, len(chunks))} из {len(chunks)}")
 
-    # --- СОХРАНЯЕМ В JSON ДЛЯ ТОЧНОГО ПОИСКА ---
+    # сохраняем в JSON для гибридного поиска
     print("5. Сохранение текстов в JSON для текстового поиска...")
     data_to_save = [{"text": c.text, "work": c.work, "chunk_id": c.chunk_id} for c in chunks]
     # Создаем папку, если ее нет
     os.makedirs(CHROMA_DB_PATH, exist_ok=True)
     with open(f"{CHROMA_DB_PATH}/chunks.json", "w", encoding="utf-8") as f:
         json.dump(data_to_save, f, ensure_ascii=False, indent=2)
+
+    #2 для отступов, false для чтобы русские буквы нормально сохранялись
 
     print(f"✅ Готово! База сохранена в папку '{CHROMA_DB_PATH}'")
 

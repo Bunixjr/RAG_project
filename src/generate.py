@@ -19,9 +19,9 @@ def find_context(query: str):
     client = chromadb.PersistentClient(path=CHROMA_DB_PATH)
     collection = client.get_collection(name=COLLECTION_NAME)
 
-    # 1. Векторный поиск (берем только 1 кусок)
+    # 1. Векторный поиск (берем только 1 кусок), query - вопрос
     query_embedding = model.encode([f"query: {query}"]).tolist()
-    results = collection.query(query_embeddings=query_embedding, n_results=1)
+    results = collection.query(query_embeddings=query_embedding, n_results=1) # Только (1) один!
     
     context_texts = []
     for i in range(len(results['documents'][0])):
@@ -33,20 +33,20 @@ def find_context(query: str):
     names = re.findall(r'\b[А-ЯЁ][а-яё]+\b', query)
     target_name = names[1] if len(names) > 1 else None
     
-    if target_name:
+    if target_name: #JSON!
         try:
             with open(f"{CHROMA_DB_PATH}/chunks.json", "r", encoding="utf-8") as f:
                 all_chunks = json.load(f)
             for chunk in all_chunks:
                 if target_name in chunk['text']:
-                    # Ставим точный кусок В САМОЕ НАЧАЛО
+                    # Ставим точный кусок в самое начало
                     exact_text = f"!!! ВАЖНЫЙ ФРАГМЕНТ !!!\nПроизведение: {chunk['work']}\nТекст:\n{chunk['text']}"
                     context_texts.insert(0, exact_text)
-                    break
+                    break # Остановка
         except FileNotFoundError:
             print("  ⚠️ Файл chunks.json не найден. Запусти embed.py!")
             
-    return "\n\n---\n\n".join(context_texts)
+    return "\n\n---\n\n".join(context_texts) #Склейка кусков
 
 def ask_llm(query: str):
     print(f"\n🔎 Вопрос: '{query}'")
@@ -55,7 +55,7 @@ def ask_llm(query: str):
     context = find_context(query)
     print(f"  [2/4] Контекст найден! (Размер: {len(context)} символов).")
     
-    # Промпт с примером (Few-Shot), чтобы модель не галлюцинировала
+    # Промпт с примером, чтобы модель не галлюцинировала
     prompt = f"""Ты — литературный помощник. Твоя задача — отвечать на вопросы, строго цитируя текст.
 Не придумывай слова, которых нет в тексте. Копируй точные слова из отрывка.
 
